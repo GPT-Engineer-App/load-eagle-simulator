@@ -1,27 +1,34 @@
-import { useState, useEffect } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from "framer-motion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Cat, Heart, Info, Facebook, Twitter, Instagram, Paw, Camera } from "lucide-react";
+import { Cat, Heart, Info, Facebook, Twitter, Instagram, Paw, Camera, Star, Gift, Calendar } from "lucide-react";
 import confetti from 'canvas-confetti';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const Index = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [showFact, setShowFact] = useState(false);
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
+  const [email, setEmail] = useState("");
+  const [adoptionProgress, setAdoptionProgress] = useState(0);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
 
   const catBreeds = [
-    { name: "Siamese", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg", description: "Known for their distinctive color points and blue eyes." },
-    { name: "Persian", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg", description: "Characterized by their long, fluffy coat and flat face." },
-    { name: "Maine Coon", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG", description: "One of the largest domestic cat breeds with tufted ears." },
-    { name: "Bengal", image: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Paintedcats_Red_Star_standing.jpg", description: "Known for their wild appearance with spotted or marbled coat patterns." },
-    { name: "British Shorthair", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg", description: "Recognized for their round face and dense, plush coat." },
+    { name: "Siamese", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg", description: "Known for their distinctive color points and blue eyes.", rating: 4.5 },
+    { name: "Persian", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg", description: "Characterized by their long, fluffy coat and flat face.", rating: 4.7 },
+    { name: "Maine Coon", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG", description: "One of the largest domestic cat breeds with tufted ears.", rating: 4.8 },
+    { name: "Bengal", image: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Paintedcats_Red_Star_standing.jpg", description: "Known for their wild appearance with spotted or marbled coat patterns.", rating: 4.6 },
+    { name: "British Shorthair", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg", description: "Recognized for their round face and dense, plush coat.", rating: 4.4 },
   ];
 
   const catFacts = [
@@ -44,6 +51,13 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAdoptionProgress(prev => (prev < 100 ? prev + 1 : 0));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLike = () => {
     setLikeCount(prev => prev + 1);
     confetti({
@@ -51,6 +65,16 @@ const Index = () => {
       spread: 70,
       origin: { y: 0.6 }
     });
+  };
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email) {
+      toast.success("Thanks for subscribing!");
+      setEmail("");
+    } else {
+      toast.error("Please enter a valid email address.");
+    }
   };
 
   return (
@@ -117,8 +141,14 @@ const Index = () => {
           </motion.div>
         </AnimatePresence>
 
-        <div className="mb-12">
-          <h3 className="text-3xl font-bold mb-6">Popular Cat Breeds</h3>
+        <motion.div 
+          ref={ref}
+          initial={{ opacity: 0, y: 50 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-12"
+        >
+          <h3 className="text-3xl font-bold mb-6 text-center">Popular Cat Breeds</h3>
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
               {catBreeds.map((breed, index) => (
@@ -127,9 +157,18 @@ const Index = () => {
                     <Card className="overflow-hidden">
                       <img src={breed.image} alt={breed.name} className="w-full h-48 object-cover" />
                       <CardHeader>
-                        <CardTitle>{breed.name}</CardTitle>
+                        <CardTitle className="flex justify-between items-center">
+                          {breed.name}
+                          <Badge variant="secondary" className="ml-2">
+                            <Star className="w-4 h-4 mr-1 inline-block" />
+                            {breed.rating}
+                          </Badge>
+                        </CardTitle>
                         <CardDescription>{breed.description}</CardDescription>
                       </CardHeader>
+                      <CardFooter>
+                        <Button variant="outline" className="w-full">Learn More</Button>
+                      </CardFooter>
                     </Card>
                   </div>
                 </CarouselItem>
@@ -138,7 +177,18 @@ const Index = () => {
             <CarouselPrevious />
             <CarouselNext />
           </Carousel>
-        </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mb-12 bg-gradient-to-r from-purple-400 to-pink-500 p-8 rounded-lg shadow-lg text-white"
+        >
+          <h3 className="text-3xl font-bold mb-4 text-center">Adoption Progress</h3>
+          <Progress value={adoptionProgress} className="mb-4" />
+          <p className="text-center text-lg">Help us reach our goal of 100 cat adoptions this month!</p>
+        </motion.div>
         
         <Tabs defaultValue="characteristics" className="mb-8">
           <TabsList className="grid w-full grid-cols-2">
@@ -230,6 +280,56 @@ const Index = () => {
             </Button>
           </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="mb-12 bg-white p-8 rounded-lg shadow-lg"
+        >
+          <h3 className="text-3xl font-bold mb-4 text-center">Upcoming Events</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="mr-2 text-purple-600" /> Cat Show
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Join us for our annual cat show featuring various breeds!</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Learn More</Button>
+              </CardFooter>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Gift className="mr-2 text-purple-600" /> Adoption Day
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Find your perfect feline companion at our adoption event.</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Register</Button>
+              </CardFooter>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Camera className="mr-2 text-purple-600" /> Photo Contest
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Submit your best cat photos for a chance to win prizes!</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Enter Now</Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </motion.div>
       </main>
 
       <footer className="bg-purple-800 text-white py-12">
@@ -249,8 +349,18 @@ const Index = () => {
               </ul>
             </div>
             <div>
-              <h4 className="text-xl font-bold mb-4">Follow Us</h4>
-              <div className="flex space-x-4">
+              <h4 className="text-xl font-bold mb-4">Stay Connected</h4>
+              <form onSubmit={handleSubscribe} className="flex flex-col space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-purple-700 text-white placeholder-purple-300"
+                />
+                <Button type="submit" variant="secondary">Subscribe</Button>
+              </form>
+              <div className="flex space-x-4 mt-4">
                 <a href="#" className="hover:text-purple-300 transition-colors"><Facebook size={24} /></a>
                 <a href="#" className="hover:text-purple-300 transition-colors"><Twitter size={24} /></a>
                 <a href="#" className="hover:text-purple-300 transition-colors"><Instagram size={24} /></a>
